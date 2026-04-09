@@ -5,6 +5,7 @@ import Catalog from './components/Catalog';
 import AdminPanel from './components/AdminPanel';
 import FavoritesPanel from './components/FavoritesPanel';
 import SearchPanel from './components/SearchPanel';
+import SellModal from './components/SellModal';
 import { Motorcycle, ViewType } from './types';
 import { Key, X, Home, Heart, User, Search } from 'lucide-react';
 import { GoogleUser, initGoogleSignIn, googleSignOut } from './services/googleAuth';
@@ -80,12 +81,14 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('visitor');
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(() => {
     try { return JSON.parse(localStorage.getItem('kip_google_user') || 'null'); } catch { return null; }
   });
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('kip_favorites') || '[]'); } catch { return []; }
   });
+
   const [motors, setMotors] = useState<Motorcycle[]>(() => {
     const saved = localStorage.getItem('jmp_inventory');
     if (saved) {
@@ -180,13 +183,28 @@ const App: React.FC = () => {
 
       <main className="flex-1 z-10">
         {view === 'visitor' && (
-          <Catalog motors={motors} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
+          <Catalog 
+            motors={motors} 
+            favorites={favorites} 
+            onToggleFavorite={handleToggleFavorite} 
+            onOpenSellModal={() => setShowSellModal(true)}
+          />
         )}
         {view === 'search' && (
-          <SearchPanel motors={motors} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
+          <SearchPanel 
+            motors={motors} 
+            favorites={favorites} 
+            onToggleFavorite={handleToggleFavorite} 
+            googleUser={googleUser}
+          />
         )}
         {view === 'favorites' && (
-          <FavoritesPanel motors={motors} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
+          <FavoritesPanel 
+            motors={motors} 
+            favorites={favorites} 
+            onToggleFavorite={handleToggleFavorite} 
+            googleUser={googleUser}
+          />
         )}
         {view === 'admin' && (
           <AdminPanel
@@ -229,6 +247,7 @@ const App: React.FC = () => {
 
       {/* Login Modal */}
       {showLoginModal && (
+        // ... (login modal content)
         <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="absolute inset-0" onClick={() => setShowLoginModal(false)} />
           <div className="bg-white w-full max-w-[480px] rounded-t-[40px] shadow-2xl p-8 relative animate-in slide-in-from-bottom-full duration-500 ease-out z-[210]">
@@ -255,6 +274,11 @@ const App: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Sell Modal */}
+      {showSellModal && (
+        <SellModal onClose={() => setShowSellModal(false)} />
       )}
     </div>
   );

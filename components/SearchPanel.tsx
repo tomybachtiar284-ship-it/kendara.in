@@ -5,13 +5,16 @@ import { Motorcycle } from '../types';
 import MotorCard from './MotorCard';
 import MotorDetail from './MotorDetail';
 
+import { GoogleUser } from '../services/googleAuth';
+
 interface SearchPanelProps {
   motors: Motorcycle[];
   favorites: string[];
   onToggleFavorite: (id: string) => void;
+  googleUser?: GoogleUser | null;
 }
 
-const SearchPanel: React.FC<SearchPanelProps> = ({ motors, favorites, onToggleFavorite }) => {
+const SearchPanel: React.FC<SearchPanelProps> = ({ motors, favorites, onToggleFavorite, googleUser }) => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Semua');
   const [condition, setCondition] = useState('Semua');
@@ -35,8 +38,12 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ motors, favorites, onToggleFa
     <div className="max-w-7xl mx-auto px-5 py-6 pb-32 min-h-screen">
       {/* Header */}
       <div className="mb-5">
-        <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Temukan Kendaraan</p>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Jelajah & Cari</h2>
+        <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">
+          {googleUser ? `Halo, ${googleUser.name.split(' ')[0]}!` : 'Temukan Kendaraan'}
+        </p>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+          {googleUser ? 'Cari kendaraan impian Anda' : 'Jelajah & Cari'}
+        </h2>
       </div>
 
       {/* Search input */}

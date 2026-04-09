@@ -4,13 +4,16 @@ import { Heart, Trash2, MessageCircleMore } from 'lucide-react';
 import { Motorcycle } from '../types';
 import MotorDetail from './MotorDetail';
 
+import { GoogleUser } from '../services/googleAuth';
+
 interface FavoritesPanelProps {
   motors: Motorcycle[];
   favorites: string[];
   onToggleFavorite: (id: string) => void;
+  googleUser?: GoogleUser | null;
 }
 
-const FavoritesPanel: React.FC<FavoritesPanelProps> = ({ motors, favorites, onToggleFavorite }) => {
+const FavoritesPanel: React.FC<FavoritesPanelProps> = ({ motors, favorites, onToggleFavorite, googleUser }) => {
   const [selectedMotor, setSelectedMotor] = useState<Motorcycle | null>(null);
 
   const favoriteMotors = motors.filter(m => favorites.includes(m.id));
@@ -22,7 +25,9 @@ const FavoritesPanel: React.FC<FavoritesPanelProps> = ({ motors, favorites, onTo
     <div className="max-w-7xl mx-auto px-5 py-6 pb-32 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Koleksi Saya</p>
+        <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">
+          {googleUser ? `Koleksi ${googleUser.name.split(' ')[0]}` : 'Koleksi Saya'}
+        </p>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Unit Favorit</h2>
         <p className="text-slate-400 text-sm mt-1">
           {favoriteMotors.length === 0 ? 'Belum ada unit yang disimpan.' : `${favoriteMotors.length} unit tersimpan`}

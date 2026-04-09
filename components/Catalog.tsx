@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, TrendingDown, TrendingUp, ArrowUpDown, Tag, CheckCircle, Wrench, SlidersHorizontal, X } from 'lucide-react';
+import { Search, TrendingDown, TrendingUp, ArrowUpDown, Tag, CheckCircle, Wrench, SlidersHorizontal, X, ArrowRight } from 'lucide-react';
 import { Motorcycle } from '../types';
 import MotorCard from './MotorCard';
 import MotorDetail from './MotorDetail';
@@ -9,11 +9,12 @@ interface CatalogProps {
   motors: Motorcycle[];
   favorites: string[];
   onToggleFavorite: (id: string) => void;
+  onOpenSellModal?: () => void;
 }
 
 type SortType = 'default' | 'price_asc' | 'price_desc' | 'newest';
 
-const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite }) => {
+const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite, onOpenSellModal }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [brandFilter, setBrandFilter] = useState('Semua');
   const [categoryFilter, setCategoryFilter] = useState('Semua');
@@ -54,7 +55,7 @@ const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite }
 
 
       {/* Promo Banner */}
-      <div className="relative bg-gradient-to-r from-slate-800 to-slate-900 rounded-[20px] p-5 mb-6 overflow-hidden shadow-lg">
+      <div className="relative bg-gradient-to-r from-slate-800 to-slate-900 rounded-[20px] p-5 mb-4 overflow-hidden shadow-lg">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 right-8 w-20 h-20 bg-blue-500/20 rounded-full translate-y-8" />
         <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">kendara.in • Palu</p>
@@ -65,6 +66,25 @@ const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite }
           <span className="text-white text-[10px] font-bold">Unit pilihan tersedia</span>
         </div>
       </div>
+
+      {/* Sell Your Vehicle Call to Action */}
+      <button 
+        onClick={onOpenSellModal}
+        className="w-full bg-white border-2 border-dashed border-slate-200 rounded-[20px] p-4 flex items-center justify-between mb-6 active:scale-[0.98] transition-all hover:border-blue-300 group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+            <Tag size={20} className="text-blue-600" />
+          </div>
+          <div className="text-left">
+            <h4 className="text-sm font-black text-slate-800">Jual Kendaraan Anda</h4>
+            <p className="text-[11px] text-slate-500 font-medium italic">Titip jual cepat & aman di sini</p>
+          </div>
+        </div>
+        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+          <ArrowRight size={18} />
+        </div>
+      </button>
 
       {/* Search + Filter Row */}
       <div className="flex gap-3 mb-6">
