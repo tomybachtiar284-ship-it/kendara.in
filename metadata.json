@@ -1,0 +1,7 @@
+{
+  "name": "Kendara.in Bekas Palu",
+  "description": "Platform jual beli Kendaraan bekas terpercaya di Palu dengan fitur manajemen admin untuk pembaruan produk.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
