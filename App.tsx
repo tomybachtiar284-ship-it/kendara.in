@@ -6,7 +6,8 @@ import AdminPanel from './components/AdminPanel';
 import FavoritesPanel from './components/FavoritesPanel';
 import SearchPanel from './components/SearchPanel';
 import SellModal from './components/SellModal';
-import { Motorcycle, ViewType } from './types';
+import NotificationPanel from './components/NotificationPanel';
+import { Motorcycle, PendingSubmission, ViewType } from './types';
 import { Key, X, Home, Heart, Search } from 'lucide-react';
 import { GoogleUser, initGoogleSignIn, googleSignOut } from './services/googleAuth';
 
@@ -82,6 +83,10 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
+  const [pendingSubmissions, setPendingSubmissions] = useState<PendingSubmission[]>(() => {
+    try { return JSON.parse(localStorage.getItem('kip_pending_submissions') || '[]'); } catch { return []; }
+  });
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(() => {
     try { return JSON.parse(localStorage.getItem('kip_google_user') || 'null'); } catch { return null; }
   });
@@ -111,6 +116,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('kip_favorites', JSON.stringify(favorites));
   }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem('kip_pending_submissions', JSON.stringify(pendingSubmissions));
+  }, [pendingSubmissions]);
 
   useEffect(() => {
     if (googleUser) {
@@ -159,6 +168,40 @@ const App: React.FC = () => {
   const deleteMotor = (id: string) => { if (confirm('Hapus unit ini dari katalog?')) setMotors(motors.filter(m => m.id !== id)); };
   const updateStatus = (id: string, status: 'Tersedia' | 'Terjual') => setMotors(motors.map(m => m.id === id ? { ...m, status } : m));
 
+  // Pending submissions handlers
+  const handleNewSubmission = (submission: PendingSubmission) => {
+    setPendingSubmissions(prev => [submission, ...prev]);
+    setShowSellModal(false);
+  };
+
+  const handleApprove = (id: string) => {
+    const sub = pendingSubmissions.find(s => s.id === id);
+    if (!sub) return;
+    // Add to motors catalog
+    const newMotor: Motorcycle = {
+      id: Math.random().toString(36).substr(2, 9),
+      brand: sub.brand,
+      model: sub.model,
+      year: sub.year,
+      price: sub.price,
+      mileage: sub.mileage,
+      condition: sub.condition,
+      images: sub.images,
+      description: sub.description,
+      status: 'Tersedia',
+      location: sub.location,
+      sellerPhone: sub.sellerPhone,
+      category: sub.category,
+      createdAt: Date.now(),
+    };
+    setMotors(prev => [newMotor, ...prev]);
+    setPendingSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
+  };
+
+  const handleReject = (id: string) => {
+    setPendingSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: 'rejected' } : s));
+  };
+
   // Secret admin access: tap logo 3x
   const [logoTapCount, setLogoTapCount] = useState(0);
   const logoTapTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,6 +244,8 @@ const App: React.FC = () => {
         onGoogleSignIn={setGoogleUser}
         onLogoTap={handleLogoTap}
         logoTapCount={logoTapCount}
+        pendingCount={pendingSubmissions.filter(s => s.status === 'pending').length}
+        onOpenNotifications={() => setShowNotificationPanel(true)}
       />
 
       <main className="flex-1 z-10">
@@ -235,11 +280,14 @@ const App: React.FC = () => {
             onUpdateMotor={updateMotor}
             onDeleteMotor={deleteMotor}
             onUpdateStatus={updateStatus}
+            pendingCount={pendingSubmissions.filter(s => s.status === 'pending').length}
+            onOpenNotifications={() => setShowNotificationPanel(true)}
           />
         )}
       </main>
 
-      {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar — hidden in admin view */}
+      {view !== 'admin' && (
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[430px] bg-slate-900/95 backdrop-blur-xl border border-white/10 z-50 rounded-[32px] shadow-2xl py-2 px-4">
         <div className="flex justify-around items-center">
           {navItems.map(item => {
@@ -266,6 +314,7 @@ const App: React.FC = () => {
           })}
         </div>
       </div>
+      )}
 
       {/* Login Modal */}
       {showLoginModal && (
@@ -308,7 +357,17 @@ const App: React.FC = () => {
 
       {/* Sell Modal */}
       {showSellModal && (
-        <SellModal onClose={() => setShowSellModal(false)} />
+        <SellModal onClose={() => setShowSellModal(false)} onSubmit={handleNewSubmission} />
+      )}
+
+      {/* Notification Panel (admin only) */}
+      {showNotificationPanel && (
+        <NotificationPanel
+          submissions={pendingSubmissions}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onClose={() => setShowNotificationPanel(false)}
+        />
       )}
     </div>
   );

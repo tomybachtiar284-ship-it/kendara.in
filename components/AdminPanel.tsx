@@ -11,6 +11,8 @@ interface AdminPanelProps {
   onUpdateMotor: (motor: Motorcycle) => void;
   onDeleteMotor: (id: string) => void;
   onUpdateStatus: (id: string, status: 'Tersedia' | 'Terjual') => void;
+  pendingCount?: number;
+  onOpenNotifications?: () => void;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ 
@@ -18,7 +20,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onAddMotor, 
   onUpdateMotor, 
   onDeleteMotor,
-  onUpdateStatus 
+  onUpdateStatus,
+  pendingCount = 0,
+  onOpenNotifications
 }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMotor, setEditingMotor] = useState<Motorcycle | null>(null);
@@ -224,13 +228,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Modal Form */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden">
-          <div className="bg-white w-full max-w-[480px] min-h-[90dvh] md:min-h-0 rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300">
-            <div className="px-6 md:px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm">
+          <div
+            className="bg-white w-full max-w-[480px] rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300"
+            style={{ height: '90dvh', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Header — fixed at top */}
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl flex-shrink-0">
               <h3 className="text-2xl font-black text-slate-900">
                 {editingMotor ? 'Edit Motor' : 'Tambah Unit Baru'}
               </h3>
-              <button 
+              <button
                 onClick={() => setIsFormOpen(false)}
                 className="p-2 hover:bg-slate-200 rounded-full transition-colors"
               >
@@ -238,184 +246,142 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 max-h-[calc(90dvh-5rem)] md:max-h-[85vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Merek (Contoh: Honda)</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={formData.brand}
-                    onChange={e => setFormData({...formData, brand: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
+            {/* Scrollable form fields — takes all remaining height */}
+            <div className="flex-1 overflow-y-auto">
+              <form id="motor-form" onSubmit={handleSubmit} className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Merek (Contoh: Honda)</label>
+                    <input required type="text" value={formData.brand}
+                      onChange={e => setFormData({...formData, brand: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Model/Tipe (Contoh: Vario 150)</label>
+                    <input required type="text" value={formData.model}
+                      onChange={e => setFormData({...formData, model: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Tahun</label>
+                    <input required type="number" value={formData.year}
+                      onChange={e => setFormData({...formData, year: parseInt(e.target.value)})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Kilometer (KM)</label>
+                    <input required type="text" placeholder="Contoh: 15rb - 20rb" value={formData.mileage}
+                      onChange={e => setFormData({...formData, mileage: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Harga (Rp)</label>
+                    <input required type="number" value={formData.price}
+                      onChange={e => setFormData({...formData, price: parseInt(e.target.value)})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Kondisi</label>
+                    <select value={formData.condition}
+                      onChange={e => setFormData({...formData, condition: e.target.value as any})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all">
+                      <option value="Mulus">Mulus (Like New)</option>
+                      <option value="Standar">Standar Pemakaian</option>
+                      <option value="Modifikasi">Modifikasi</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Kategori</label>
+                    <select value={formData.category}
+                      onChange={e => setFormData({...formData, category: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all">
+                      <option value="Motor">Motor</option>
+                      <option value="Mobil">Mobil</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Lokasi Terkini (Contoh: Palu, Parigi)</label>
+                    <input required type="text" value={formData.location}
+                      onChange={e => setFormData({...formData, location: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">No. WA Penjual (Berawalan 62)</label>
+                    <input required type="text" placeholder="Contoh: 6281234567890" value={formData.sellerPhone}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData({...formData, sellerPhone: val});
+                      }}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Model/Tipe (Contoh: Vario 150)</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={formData.model}
-                    onChange={e => setFormData({...formData, model: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Tahun</label>
-                  <input 
-                    required
-                    type="number" 
-                    value={formData.year}
-                    onChange={e => setFormData({...formData, year: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Kilometer (KM)</label>
-                  <input 
-                    required
-                    type="text" 
-                    placeholder="Contoh: 15rb - 20rb"
-                    value={formData.mileage}
-                    onChange={e => setFormData({...formData, mileage: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Harga (Rp)</label>
-                  <input 
-                    required
-                    type="number" 
-                    value={formData.price}
-                    onChange={e => setFormData({...formData, price: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Kondisi</label>
-                  <select 
-                    value={formData.condition}
-                    onChange={e => setFormData({...formData, condition: e.target.value as any})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  >
-                    <option value="Mulus">Mulus (Like New)</option>
-                    <option value="Standar">Standar Pemakaian</option>
-                    <option value="Modifikasi">Modifikasi</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Kategori</label>
-                  <select 
-                    value={formData.category}
-                    onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  >
-                    <option value="Motor">Motor</option>
-                    <option value="Mobil">Mobil</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Lokasi Terkini (Contoh: Palu, Parigi)</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={formData.location}
-                    onChange={e => setFormData({...formData, location: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">No. WA Penjual (Berawalan 62)</label>
-                  <input 
-                    required
-                    type="text" 
-                    placeholder="Contoh: 6281234567890"
-                    value={formData.sellerPhone}
-                    onChange={e => {
-                      const val = e.target.value.replace(/[^0-9]/g, '');
-                      setFormData({...formData, sellerPhone: val});
-                    }}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Foto Produk (Maks 5 Foto)</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
-                  {formData.images.filter(img => img !== '').map((img, index) => (
-                    <div key={index} className="relative aspect-video sm:aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group">
-                      <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const newImages = formData.images.filter((_, i) => i !== index);
-                          setFormData({...formData, images: newImages.length ? newImages : ['']});
-                        }}
-                        className="absolute top-2 right-2 p-1.5 bg-rose-600/90 hover:bg-rose-700 text-white rounded-lg shadow-sm"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {formData.images.filter(img => img !== '').length < 5 && (
-                    <label className="aspect-video sm:aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-rose-500 hover:bg-rose-50 flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-50 group">
-                      <PlusCircle className="text-slate-400 group-hover:text-rose-500 mb-2" size={28} />
-                      <span className="text-xs font-bold text-slate-500 group-hover:text-rose-600">Pilih / Kamera</span>
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                  )}
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Foto Produk (Maks 5 Foto)</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+                    {formData.images.filter(img => img !== '').map((img, index) => (
+                      <div key={index} className="relative aspect-video sm:aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group">
+                        <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImages = formData.images.filter((_, i) => i !== index);
+                            setFormData({...formData, images: newImages.length ? newImages : ['']});
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-rose-600/90 hover:bg-rose-700 text-white rounded-lg shadow-sm"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {formData.images.filter(img => img !== '').length < 5 && (
+                      <label className="aspect-video sm:aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-rose-500 hover:bg-rose-50 flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-50 group">
+                        <PlusCircle className="text-slate-400 group-hover:text-rose-500 mb-2" size={28} />
+                        <span className="text-xs font-bold text-slate-500 group-hover:text-rose-600">Pilih / Kamera</span>
+                        <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">Otomatis diperkecil agar kualitas tetap bagus dan tidak memberatkan (bisa pilih banyak sekaligus).</p>
                 </div>
-                <p className="text-xs text-slate-400">Otomatis diperkecil agar kualitas tetap bagus dan tidak memberatkan (bisa pilih banyak sekaligus).</p>
-              </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-bold text-slate-700">Deskripsi Promosi</label>
-                  <button 
-                    type="button"
-                    onClick={handleAutoDescription}
-                    disabled={isGenerating}
-                    className="text-xs flex items-center gap-1 text-purple-600 font-bold hover:text-purple-700 disabled:opacity-50"
-                  >
-                    <Sparkles size={14} />
-                    {isGenerating ? 'Menulis...' : 'Tulis Otomatis dengan AI'}
-                  </button>
+                {/* Description */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-bold text-slate-700">Deskripsi Promosi</label>
+                    <button type="button" onClick={handleAutoDescription} disabled={isGenerating}
+                      className="text-xs flex items-center gap-1 text-purple-600 font-bold hover:text-purple-700 disabled:opacity-50">
+                      <Sparkles size={14} />
+                      {isGenerating ? 'Menulis...' : 'Tulis Otomatis dengan AI'}
+                    </button>
+                  </div>
+                  <textarea required rows={4} value={formData.description}
+                    onChange={e => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all" />
                 </div>
-                <textarea 
-                  required
-                  rows={4}
-                  value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none bg-slate-50 transition-all"
-                ></textarea>
-              </div>
+              </form>
+            </div>
 
-              <div className="flex gap-4 pt-4">
-                <button 
-                  type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  className="flex-1 py-4 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit"
-                  className="flex-1 py-4 bg-gradient-to-r from-rose-600 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-rose-500/30 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
-                >
-                  <Save size={20} />
-                  Simpan Unit
-                </button>
-              </div>
-            </form>
+            {/* Action buttons — ALWAYS visible, outside scroll area */}
+            <div className="flex-shrink-0 flex gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(false)}
+                className="flex-1 py-4 border border-slate-200 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                form="motor-form"
+                className="flex-1 py-4 bg-gradient-to-r from-rose-600 to-orange-500 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all"
+              >
+                <Save size={20} />
+                Simpan Unit
+              </button>
+            </div>
           </div>
         </div>
       )}

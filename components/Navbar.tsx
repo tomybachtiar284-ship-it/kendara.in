@@ -16,6 +16,8 @@ interface NavbarProps {
   onGoogleSignIn?: (user: GoogleUser) => void;
   onLogoTap?: () => void;
   logoTapCount?: number;
+  pendingCount?: number;
+  onOpenNotifications?: () => void;
 }
 
 const viewTitles: Record<ViewType, { sub: string; title: string }> = {
@@ -36,6 +38,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onGoogleSignIn,
   onLogoTap,
   logoTapCount = 0,
+  pendingCount = 0,
+  onOpenNotifications,
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(false);
@@ -93,12 +97,19 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* Right side actions */}
           <div className="flex items-center gap-2 shrink-0">
 
-            {/* Admin logout — only shown when inside admin view */}
+            {/* Admin notifications bell — only shown when inside admin view */}
             {isAdmin && currentView === 'admin' && (
               <>
-                <button className="relative flex items-center justify-center p-2.5 rounded-full bg-white shadow-sm text-slate-700">
+                <button 
+                  onClick={onOpenNotifications}
+                  className="relative flex items-center justify-center p-2.5 rounded-full bg-white shadow-sm text-slate-700 active:scale-95 transition-transform"
+                >
                   <Bell size={20} strokeWidth={2.5} />
-                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                      {pendingCount}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={onLogout}

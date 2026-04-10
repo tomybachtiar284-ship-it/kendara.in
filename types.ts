@@ -22,3 +22,23 @@ export interface AdminCredentials {
   username: string;
   isAuthenticated: boolean;
 }
+
+export interface PendingSubmission {
+  id: string;
+  submittedAt: number;
+  status: 'pending' | 'approved' | 'rejected';
+  // Seller info
+  sellerName: string;
+  sellerPhone: string;
+  // Vehicle info
+  brand: string;
+  model: string;
+  year: number;
+  price: number;
+  mileage: string;
+  condition: 'Mulus' | 'Standar' | 'Modifikasi';
+  category: string;
+  location: string;
+  description: string;
+  images: string[];
+}
