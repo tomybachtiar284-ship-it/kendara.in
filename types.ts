@@ -14,6 +14,8 @@ export interface Motorcycle {
   sellerPhone: string;
   category: string;
   createdAt: number;
+  views?: number;
+  clicks?: number;
 }
 
 export type ViewType = 'visitor' | 'admin' | 'favorites' | 'search';
@@ -41,4 +43,6 @@ export interface PendingSubmission {
   location: string;
   description: string;
   images: string[];
+  views?: number;
+  clicks?: number;
 }

@@ -10,11 +10,12 @@ interface CatalogProps {
   favorites: string[];
   onToggleFavorite: (id: string) => void;
   onOpenSellModal?: () => void;
+  onViewMotor?: (id: string) => void;
 }
 
 type SortType = 'default' | 'price_asc' | 'price_desc' | 'newest';
 
-const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite, onOpenSellModal }) => {
+const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite, onOpenSellModal, onViewMotor }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [brandFilter, setBrandFilter] = useState('Semua');
   const [categoryFilter, setCategoryFilter] = useState('Semua');
@@ -233,7 +234,10 @@ const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite, 
               motor={motor}
               isFavorite={favorites.includes(motor.id)}
               onToggleFavorite={onToggleFavorite}
-              onClick={() => setSelectedMotor(motor)}
+              onClick={() => {
+                setSelectedMotor(motor);
+                if (onViewMotor) onViewMotor(motor.id);
+              }}
             />
           ))}
         </div>

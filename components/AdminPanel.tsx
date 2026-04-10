@@ -1,6 +1,10 @@
 
 import React, { useState } from 'react';
-import { PlusCircle, Sparkles, X, Save, Image as ImageIcon, Search } from 'lucide-react';
+import { 
+  PlusCircle, Sparkles, X, Save, Image as ImageIcon, Search, 
+  TrendingUp, TrendingDown, DollarSign, Package, ClipboardCheck, 
+  Eye, Trophy, Target, LayoutDashboard
+} from 'lucide-react';
 import { Motorcycle } from '../types';
 import { generateMotorDescription } from '../services/geminiService';
 import MotorCard from './MotorCard';
@@ -151,44 +155,128 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     `${m.brand} ${m.model}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalAvailable = motors.filter(m => m.status === 'Tersedia').length;
-  const totalSold = motors.filter(m => m.status === 'Terjual').length;
-  const totalValue = motors.filter(m => m.status === 'Tersedia').reduce((s, m) => s + m.price, 0);
+  // ANALYTICS CALCULATIONS
+  const totalUnits = motors.length;
+  const soldUnits = motors.filter(m => m.status === 'Terjual').length;
+  const availableUnits = totalUnits - soldUnits;
+  const soldRatio = totalUnits > 0 ? (soldUnits / totalUnits) * 100 : 0;
+  
+  const totalValue = motors
+    .filter(m => m.status === 'Tersedia')
+    .reduce((sum, m) => sum + m.price, 0);
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
+  const totalViews = motors.reduce((sum, m) => sum + (m.views || 0), 0);
+  
+  // Find most popular (by views)
+  const topMotor = [...motors]
+    .filter(m => (m.views || 0) > 0)
+    .sort((a, b) => (b.views || 0) - (a.views || 0))[0];
+
+  const formatCurrency = (val: number) => 
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
   return (
     <div className="max-w-7xl mx-auto px-5 py-4 min-h-screen pb-32 relative">
-      <div className="flex flex-col gap-1 mb-5">
-        <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Dashboard</p>
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Kelola Inventaris</h2>
-        <p className="text-slate-400 text-sm">Admin · Kendara.in Bekas Palu</p>
+      <div className="flex flex-col gap-1 mb-6">
+        <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] px-1">Admin Dashboard</p>
+        <div className="flex items-center gap-2">
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Data & Statistik</h2>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-slate-900 rounded-2xl p-4 text-white">
-          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1">Total Unit</p>
-          <p className="text-3xl font-black">{motors.length}</p>
-          <p className="text-[10px] text-slate-500 mt-1">dalam katalog</p>
+      {/* DASHBOARD ANALYTICS SECTION */}
+      <div className="space-y-4 mb-8">
+        {/* Stats Row 1: Primary Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Total Value Card */}
+          <div className="col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-[32px] p-6 shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+              <DollarSign size={80} />
+            </div>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Estimasi Nilai Inventaris</p>
+            <h3 className="text-2xl font-black text-white">{formatCurrency(totalValue)}</h3>
+            <div className="flex items-center gap-2 mt-4">
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                <TrendingUp size={10} /> Active
+              </span>
+              <span className="text-slate-500 text-[10px] font-bold">Berdasarkan unit tersedia</span>
+            </div>
+          </div>
+
+          {/* Stok Card */}
+          <div className="bg-white rounded-[28px] p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
+              <Package size={20} className="text-blue-500" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Stok</p>
+              <h4 className="text-xl font-black text-slate-900">{totalUnits} <span className="text-xs font-medium text-slate-400">Unit</span></h4>
+            </div>
+          </div>
+
+          {/* Sold Card */}
+          <div className="bg-white rounded-[28px] p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center mb-3">
+              <Target size={20} className="text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Unit Terjual</p>
+              <h4 className="text-xl font-black text-slate-900">{soldUnits} <span className="text-xs font-medium text-slate-400">Unit</span></h4>
+            </div>
+          </div>
         </div>
-        <div className="bg-emerald-500 rounded-2xl p-4 text-white">
-          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-100/80 mb-1">Tersedia</p>
-          <p className="text-3xl font-black">{totalAvailable}</p>
-          <p className="text-[10px] text-emerald-100/70 mt-1">siap dijual</p>
+
+        {/* Stats Row 2: Engagement */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Views Card */}
+          <div className="bg-blue-600 rounded-[28px] p-5 shadow-lg shadow-blue-200 text-white relative overflow-hidden">
+             <Eye size={40} className="absolute -bottom-2 -right-2 opacity-20" />
+             <p className="text-blue-100 text-[10px] font-black uppercase tracking-wider">Dilihat Hari Ini</p>
+             <h4 className="text-2xl font-black mt-1">{totalViews}</h4>
+             <p className="text-[9px] text-blue-200 mt-1 font-bold">Total views katalog</p>
+          </div>
+
+          {/* Pending Card */}
+          <div className="bg-amber-500 rounded-[28px] p-5 shadow-lg shadow-amber-200 text-white relative overflow-hidden cursor-pointer active:scale-95 transition-transform" onClick={onOpenNotifications}>
+             <ClipboardCheck size={40} className="absolute -bottom-2 -right-2 opacity-20" />
+             <p className="text-amber-100 text-[10px] font-black uppercase tracking-wider">Antrian Review</p>
+             <h4 className="text-2xl font-black mt-1">{pendingCount}</h4>
+             <p className="text-[9px] text-amber-100 mt-1 font-bold">Klik untuk proses</p>
+          </div>
         </div>
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1">Terjual</p>
-          <p className="text-3xl font-black text-slate-900">{totalSold}</p>
-          <p className="text-[10px] text-slate-400 mt-1">unit closing</p>
-        </div>
-        <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100/50">
-          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-blue-400 mb-1">Nilai Stok</p>
-          <p className="text-sm font-black text-slate-900 leading-tight">{formatPrice(totalValue)}</p>
-          <p className="text-[10px] text-slate-400 mt-1">total estimasi</p>
+
+        {/* Popular Item Card */}
+        {topMotor && (
+          <div className="bg-white rounded-[28px] p-4 border border-slate-100 shadow-sm flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+            <div className="relative">
+              <img src={topMotor.images[0]} alt="top" className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
+              <div className="absolute -top-2 -left-2 w-7 h-7 bg-amber-400 border-2 border-white rounded-full flex items-center justify-center shadow-lg">
+                <Trophy size={14} className="text-white" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-amber-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                🔥 Unit Terpopuler
+              </p>
+              <h4 className="text-sm font-black text-slate-900 truncate">{topMotor.brand} {topMotor.model}</h4>
+              <p className="text-slate-400 text-[11px] font-bold">Dilihat {topMotor.views} kali oleh pengunjung</p>
+            </div>
+          </div>
+        )}
+
+        {/* Health Indicator */}
+        <div className="bg-slate-50 rounded-3xl p-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Inventory Health</span>
+            <span className="text-xs font-black text-slate-900">{availableUnits} Unit Tersedia</span>
+          </div>
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
+            <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${100 - soldRatio}%` }} />
+            <div className="h-full bg-slate-400/30 transition-all duration-1000" style={{ width: `${soldRatio}%` }} />
+          </div>
         </div>
       </div>
+
 
       <div className="mb-8">
         <div className="relative">

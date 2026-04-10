@@ -160,6 +160,9 @@ const App: React.FC = () => {
     googleSignOut();
     setGoogleUser(null);
   };
+  const incrementViews = (id: string) => {
+    setMotors(prev => prev.map(m => m.id === id ? { ...m, views: (m.views || 0) + 1 } : m));
+  };
 
   const addMotor = (motorData: Omit<Motorcycle, 'id' | 'createdAt'>) => {
     setMotors([{ ...motorData, id: Math.random().toString(36).substr(2, 9), createdAt: Date.now() }, ...motors]);
@@ -255,6 +258,7 @@ const App: React.FC = () => {
             favorites={favorites} 
             onToggleFavorite={handleToggleFavorite} 
             onOpenSellModal={() => setShowSellModal(true)}
+            onViewMotor={incrementViews}
           />
         )}
         {view === 'search' && (
