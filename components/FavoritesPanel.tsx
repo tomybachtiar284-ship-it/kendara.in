@@ -16,7 +16,11 @@ interface FavoritesPanelProps {
 const FavoritesPanel: React.FC<FavoritesPanelProps> = ({ motors, favorites, onToggleFavorite, googleUser }) => {
   const [selectedMotor, setSelectedMotor] = useState<Motorcycle | null>(null);
 
-  const favoriteMotors = motors.filter(m => favorites.includes(m.id));
+  const favoriteMotors = motors.filter(m => {
+    const isFavorite = favorites.includes(m.id);
+    const isExpired = m.expiryDate && Date.now() > m.expiryDate;
+    return isFavorite && !isExpired;
+  });
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);

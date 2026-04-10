@@ -29,7 +29,8 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ motors, favorites, onToggleFa
     const matchCat = category === 'Semua' || m.category === category;
     const matchCond = condition === 'Semua' || m.condition === condition;
     const matchPrice = m.price <= maxPriceValue;
-    return matchQuery && matchCat && matchCond && matchPrice;
+    const isExpired = m.expiryDate && Date.now() > m.expiryDate;
+    return matchQuery && matchCat && matchCond && matchPrice && !isExpired;
   });
 
   const formatM = (val: number) => val >= 100 ? `${val}Jt` : `${val}Jt`;

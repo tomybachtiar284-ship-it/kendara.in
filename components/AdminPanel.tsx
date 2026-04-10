@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { 
   PlusCircle, Sparkles, X, Save, Image as ImageIcon, Search, 
   TrendingUp, TrendingDown, DollarSign, Package, ClipboardCheck, 
-  Eye, Trophy, Target, LayoutDashboard
+  Eye, Trophy, Target, LayoutDashboard, CreditCard, Wallet, Smartphone, Landmark, Settings as SettingsIcon
 } from 'lucide-react';
-import { Motorcycle } from '../types';
+import { Motorcycle, AppSettings } from '../types';
 import { generateMotorDescription } from '../services/geminiService';
 import MotorCard from './MotorCard';
 
@@ -17,6 +17,8 @@ interface AdminPanelProps {
   onUpdateStatus: (id: string, status: 'Tersedia' | 'Terjual') => void;
   pendingCount?: number;
   onOpenNotifications?: () => void;
+  settings: AppSettings;
+  onUpdateSettings: (s: AppSettings) => void;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ 
@@ -26,8 +28,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteMotor,
   onUpdateStatus,
   pendingCount = 0,
-  onOpenNotifications
+  onOpenNotifications,
+  settings,
+  onUpdateSettings
 }) => {
+  const [activeTab, setActiveTab] = useState<'inventory' | 'settings'>('inventory');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMotor, setEditingMotor] = useState<Motorcycle | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -177,6 +182,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-5 py-4 min-h-screen pb-32 relative">
+      {/* Tab Navigation */}
+      <div className="mb-6">
+        <div className="bg-slate-100 p-1.5 rounded-[20px] flex gap-1">
+          <button 
+            onClick={() => setActiveTab('inventory')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${activeTab === 'inventory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <LayoutDashboard size={18} /> Inventaris
+          </button>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${activeTab === 'settings' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <SettingsIcon size={18} /> Pengaturan
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'inventory' ? (
+        <>
       <div className="flex flex-col gap-1 mb-6">
         <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] px-1">Admin Dashboard</p>
         <div className="flex items-center gap-2">
@@ -311,6 +336,151 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               onUpdateStatus={onUpdateStatus}
             />
           ))}
+        </div>
+      )}
+        </>
+      ) : (
+        /* SETTINGS SECTION */
+        <div className="px-1 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
+                <DollarSign className="text-rose-500" size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Tarif Premium</h3>
+                <p className="text-slate-400 text-sm font-medium">Atur biaya pasang iklan eksklusif</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Harga (Rupiah)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-900">Rp</span>
+                  <input 
+                    type="number" 
+                    value={settings.premiumPrice}
+                    onChange={(e) => onUpdateSettings({ ...settings, premiumPrice: Number(e.target.value) })}
+                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-900 focus:ring-2 focus:ring-rose-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-50 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                  <TrendingUp className="text-blue-500" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Masa Aktif</h3>
+                  <p className="text-slate-400 text-sm font-medium">Berapa hari iklan akan tampil</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Paket Gratis</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      value={settings.freeDurationDays}
+                      onChange={(e) => onUpdateSettings({ ...settings, freeDurationDays: Number(e.target.value) })}
+                      className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Hari</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Paket Premium</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      value={settings.premiumDurationDays}
+                      onChange={(e) => onUpdateSettings({ ...settings, premiumDurationDays: Number(e.target.value) })}
+                      className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-900 focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Hari</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-50 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                  <Landmark className="text-emerald-500" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Rekening Bank</h3>
+                  <p className="text-slate-400 text-sm font-medium">Informasi transfer antar bank</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nama Bank</label>
+                  <input type="text" value={settings.bankName} 
+                    onChange={e => onUpdateSettings({...settings, bankName: e.target.value})}
+                    placeholder="Contoh: BCA"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nomor Rekening</label>
+                  <input type="text" value={settings.bankAccount} 
+                    onChange={e => onUpdateSettings({...settings, bankAccount: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+                <div className="md:col-span-2 space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nama Pemilik Rekening</label>
+                  <input type="text" value={settings.bankHolder} 
+                    onChange={e => onUpdateSettings({...settings, bankHolder: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-50 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                  <Smartphone className="text-blue-500" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">E-Wallet</h3>
+                  <p className="text-slate-400 text-sm font-medium">Nomor akun dompet digital</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nomor DANA</label>
+                  <input type="text" value={settings.danaNumber} 
+                    onChange={e => onUpdateSettings({...settings, danaNumber: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" rotate-0 />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nomor OVO</label>
+                  <input type="text" value={settings.ovoNumber} 
+                    onChange={e => onUpdateSettings({...settings, ovoNumber: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nomor Gopay</label>
+                  <input type="text" value={settings.gopayNumber} 
+                    onChange={e => onUpdateSettings({...settings, gopayNumber: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-4 flex items-start gap-3">
+              <Sparkles className="text-amber-500 shrink-0 mt-0.5" size={18} />
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                Pengaturan ini akan langsung merubah informasi harga di form pendaftaran penjual dan masa tenggang baru saat Anda menyetujui unit.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

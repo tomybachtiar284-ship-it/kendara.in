@@ -16,6 +16,20 @@ export interface Motorcycle {
   createdAt: number;
   views?: number;
   clicks?: number;
+  isPremium?: boolean;
+  expiryDate?: number;
+}
+
+export interface AppSettings {
+  premiumPrice: number;
+  freeDurationDays: number;
+  premiumDurationDays: number;
+  bankName: string;
+  bankAccount: string;
+  bankHolder: string;
+  danaNumber: string;
+  ovoNumber: string;
+  gopayNumber: string;
 }
 
 export type ViewType = 'visitor' | 'admin' | 'favorites' | 'search';
@@ -45,4 +59,7 @@ export interface PendingSubmission {
   images: string[];
   views?: number;
   clicks?: number;
+  isPremium?: boolean;
+  paymentMethod?: string;
+  paymentProof?: string;
 }

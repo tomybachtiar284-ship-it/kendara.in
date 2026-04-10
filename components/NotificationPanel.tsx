@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Bell, X, Check, ChevronRight, Clock, Phone, MapPin, Tag } from 'lucide-react';
+import { Bell, X, Check, ChevronRight, Clock, Phone, MapPin, Tag, CreditCard, FileText, Star } from 'lucide-react';
 import { PendingSubmission } from '../types';
 
 interface NotificationPanelProps {
@@ -112,6 +112,44 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ submissions, onAp
                 <p className="text-[11px] text-slate-400 flex items-center gap-1">
                   <Clock size={11} /> Dikirim {formatTimeAgo(selected.submittedAt)}
                 </p>
+
+                {/* PREMIUM PAYMENT INFO */}
+                {selected.isPremium && (
+                  <div className="pt-2">
+                    <div className="bg-amber-50 rounded-[32px] border border-amber-100 overflow-hidden shadow-sm">
+                      <div className="px-5 py-4 bg-amber-100/30 flex items-center justify-between border-b border-amber-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-amber-400 rounded-xl flex items-center justify-center text-white shadow-sm">
+                            <Star size={14} fill="currentColor" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-amber-900 leading-none">Paket Premium</p>
+                            <p className="text-[10px] font-bold text-amber-600 mt-0.5 uppercase tracking-tighter">Pembayaran Diterima</p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 bg-white rounded-lg text-[10px] font-black text-amber-700 shadow-sm">{selected.paymentMethod}</span>
+                      </div>
+                      <div className="p-5 space-y-4">
+                        <div className="flex items-center gap-2">
+                          <FileText size={14} className="text-amber-500" />
+                          <p className="text-xs font-bold text-slate-600">Bukti Transfer:</p>
+                        </div>
+                        {selected.paymentProof ? (
+                          <div className="rounded-2xl border border-amber-200 overflow-hidden bg-white shadow-inner">
+                            <img 
+                              src={selected.paymentProof} 
+                              alt="Bukti Transfer" 
+                              className="w-full object-contain max-h-96 cursor-zoom-in"
+                              onClick={() => window.open(selected.paymentProof, '_blank')}
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-rose-500 font-bold italic bg-rose-50 px-3 py-2 rounded-xl border border-rose-100 uppercase">⚠️ Bukti transfer tidak ditemukan</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -143,13 +181,20 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ submissions, onAp
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <p className="font-black text-slate-900 text-sm truncate">{s.brand} {s.model} {s.year}</p>
-                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ml-2 flex-shrink-0 ${
-                              s.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                              s.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                              'bg-rose-100 text-rose-700'
-                            }`}>
-                              {s.status === 'pending' ? 'Menunggu' : s.status === 'approved' ? 'Disetujui' : 'Ditolak'}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {s.isPremium && (
+                                <span className="bg-amber-400 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                                  <Star size={8} fill="currentColor" /> PREMIUM
+                                </span>
+                              )}
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                s.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                s.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                'bg-rose-100 text-rose-700'
+                              }`}>
+                                {s.status === 'pending' ? 'Menunggu' : s.status === 'approved' ? 'Disetujui' : 'Ditolak'}
+                              </span>
+                            </div>
                           </div>
                           <p className="text-xs font-bold text-emerald-600">{formatPrice(s.price)}</p>
                           <p className="text-[11px] text-slate-400 mt-0.5">oleh {s.sellerName} · {formatTimeAgo(s.submittedAt)}</p>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Heart, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Heart, Edit, Trash2, Star } from 'lucide-react';
 import { Motorcycle } from '../types';
 
 interface MotorCardProps {
@@ -29,9 +29,15 @@ const MotorCard: React.FC<MotorCardProps> = ({
 
   return (
     <div
-      className="bg-white rounded-[20px] p-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col group relative cursor-pointer active:scale-[0.98] transition-all duration-200"
+      className={`bg-white rounded-[20px] p-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col group relative cursor-pointer active:scale-[0.98] transition-all duration-200 ${motor.isPremium ? 'border-2 border-amber-400 shadow-amber-100 shadow-lg' : 'border border-transparent'}`}
       onClick={onClick}
     >
+      {motor.isPremium && (
+        <div className="absolute -top-2 -left-2 z-30 px-3 py-1 bg-amber-400 text-white rounded-xl shadow-lg flex items-center gap-1.5 animate-bounce-subtle">
+          <Star size={12} fill="white" />
+          <span className="text-[10px] font-black tracking-tight uppercase">Gold</span>
+        </div>
+      )}
       {/* Image */}
       <div className="relative aspect-square rounded-[16px] overflow-hidden">
         <img

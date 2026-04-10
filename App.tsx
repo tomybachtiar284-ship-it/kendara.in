@@ -7,7 +7,7 @@ import FavoritesPanel from './components/FavoritesPanel';
 import SearchPanel from './components/SearchPanel';
 import SellModal from './components/SellModal';
 import NotificationPanel from './components/NotificationPanel';
-import { Motorcycle, PendingSubmission, ViewType } from './types';
+import { Motorcycle, PendingSubmission, ViewType, AppSettings } from './types';
 import { Key, X, Home, Heart, Search } from 'lucide-react';
 import { GoogleUser, initGoogleSignIn, googleSignOut } from './services/googleAuth';
 
@@ -93,6 +93,33 @@ const App: React.FC = () => {
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('kip_favorites') || '[]'); } catch { return []; }
   });
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    try { 
+      return JSON.parse(localStorage.getItem('kip_settings') || JSON.stringify({
+        premiumPrice: 15000,
+        freeDurationDays: 14,
+        premiumDurationDays: 30,
+        bankName: 'BCA',
+        bankAccount: '1234567890',
+        bankHolder: 'Admin Kendara.in',
+        danaNumber: '08123456789',
+        ovoNumber: '08123456789',
+        gopayNumber: '08123456789'
+      })); 
+    } catch { 
+      return { 
+        premiumPrice: 15000, 
+        freeDurationDays: 14, 
+        premiumDurationDays: 30,
+        bankName: 'BCA',
+        bankAccount: '1234567890',
+        bankHolder: 'Admin Kendara.in',
+        danaNumber: '08123456789',
+        ovoNumber: '08123456789',
+        gopayNumber: '08123456789'
+      }; 
+    }
+  });
 
   const [motors, setMotors] = useState<Motorcycle[]>(() => {
     const saved = localStorage.getItem('jmp_inventory');
@@ -120,6 +147,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('kip_pending_submissions', JSON.stringify(pendingSubmissions));
   }, [pendingSubmissions]);
+
+  useEffect(() => {
+    localStorage.setItem('kip_settings', JSON.stringify(settings));
+  }, [settings]);
 
   useEffect(() => {
     if (googleUser) {
@@ -180,6 +211,11 @@ const App: React.FC = () => {
   const handleApprove = (id: string) => {
     const sub = pendingSubmissions.find(s => s.id === id);
     if (!sub) return;
+
+    // Calculate dynamic expiry date based on settings
+    const durationDays = sub.isPremium ? settings.premiumDurationDays : settings.freeDurationDays;
+    const expiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+
     // Add to motors catalog
     const newMotor: Motorcycle = {
       id: Math.random().toString(36).substr(2, 9),
@@ -196,6 +232,8 @@ const App: React.FC = () => {
       sellerPhone: sub.sellerPhone,
       category: sub.category,
       createdAt: Date.now(),
+      isPremium: sub.isPremium,
+      expiryDate: expiryDate, // Automatically set based on duration settings
     };
     setMotors(prev => [newMotor, ...prev]);
     setPendingSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
@@ -286,6 +324,8 @@ const App: React.FC = () => {
             onUpdateStatus={updateStatus}
             pendingCount={pendingSubmissions.filter(s => s.status === 'pending').length}
             onOpenNotifications={() => setShowNotificationPanel(true)}
+            settings={settings}
+            onUpdateSettings={setSettings}
           />
         )}
       </main>
@@ -361,7 +401,11 @@ const App: React.FC = () => {
 
       {/* Sell Modal */}
       {showSellModal && (
-        <SellModal onClose={() => setShowSellModal(false)} onSubmit={handleNewSubmission} />
+        <SellModal 
+          onClose={() => setShowSellModal(false)} 
+          onSubmit={handleNewSubmission} 
+          settings={settings}
+        />
       )}
 
       {/* Notification Panel (admin only) */}

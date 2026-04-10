@@ -39,9 +39,15 @@ const Catalog: React.FC<CatalogProps> = ({ motors, favorites, onToggleFavorite, 
         matchesCategory = m.category === categoryFilter;
       }
 
-      return matchesSearch && matchesBrand && matchesCategory && matchesCondition;
+      const isExpired = m.expiryDate && Date.now() > m.expiryDate;
+
+      return matchesSearch && matchesBrand && matchesCategory && matchesCondition && !isExpired;
     })
     .sort((a, b) => {
+      // Prioritize Premium listings
+      if (a.isPremium && !b.isPremium) return -1;
+      if (!a.isPremium && b.isPremium) return 1;
+
       if (sortBy === 'price_asc') return a.price - b.price;
       if (sortBy === 'price_desc') return b.price - a.price;
       if (sortBy === 'newest') return b.createdAt - a.createdAt;
