@@ -7,7 +7,7 @@ import FavoritesPanel from './components/FavoritesPanel';
 import SearchPanel from './components/SearchPanel';
 import SellModal from './components/SellModal';
 import { Motorcycle, ViewType } from './types';
-import { Key, X, Home, Heart, User, Search } from 'lucide-react';
+import { Key, X, Home, Heart, Search } from 'lucide-react';
 import { GoogleUser, initGoogleSignIn, googleSignOut } from './services/googleAuth';
 
 const INITIAL_MOTORS: Motorcycle[] = [
@@ -159,11 +159,31 @@ const App: React.FC = () => {
   const deleteMotor = (id: string) => { if (confirm('Hapus unit ini dari katalog?')) setMotors(motors.filter(m => m.id !== id)); };
   const updateStatus = (id: string, status: 'Tersedia' | 'Terjual') => setMotors(motors.map(m => m.id === id ? { ...m, status } : m));
 
+  // Secret admin access: tap logo 3x
+  const [logoTapCount, setLogoTapCount] = useState(0);
+  const logoTapTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleLogoTap = () => {
+    const next = logoTapCount + 1;
+    setLogoTapCount(next);
+    if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
+    if (next >= 3) {
+      setLogoTapCount(0);
+      if (isAdmin) {
+        setView('admin');
+      } else {
+        setShowLoginModal(true);
+      }
+    } else {
+      logoTapTimer.current = setTimeout(() => setLogoTapCount(0), 1500);
+    }
+  };
+
+  // Only public nav items — admin access is via secret logo tap
   const navItems: { view: ViewType; icon: React.ReactNode; label: string }[] = [
     { view: 'visitor', icon: <Home size={20} />, label: 'Beranda' },
     { view: 'search', icon: <Search size={20} />, label: 'Jelajah' },
     { view: 'favorites', icon: <Heart size={20} />, label: 'Favorit' },
-    { view: 'admin', icon: <User size={20} />, label: isAdmin ? 'Admin' : 'Masuk' },
   ];
 
   return (
@@ -179,6 +199,8 @@ const App: React.FC = () => {
         googleUser={googleUser}
         onGoogleSignOut={handleGoogleSignOut}
         onGoogleSignIn={setGoogleUser}
+        onLogoTap={handleLogoTap}
+        logoTapCount={logoTapCount}
       />
 
       <main className="flex-1 z-10">
@@ -251,7 +273,15 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="absolute inset-0" onClick={() => setShowLoginModal(false)} />
           <div className="bg-white w-full max-w-[480px] rounded-t-[40px] shadow-2xl p-8 relative animate-in slide-in-from-bottom-full duration-500 ease-out z-[210]">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8 cursor-pointer" onClick={() => setShowLoginModal(false)} />
+            {/* Drag handle */}
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 cursor-pointer" onClick={() => setShowLoginModal(false)} />
+            {/* X close button */}
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-8 right-8 w-9 h-9 bg-slate-100 rounded-2xl flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <X size={18} className="text-slate-600" />
+            </button>
             <div className="text-center mb-8">
               <div className="bg-slate-900 w-16 h-16 rounded-[22px] flex items-center justify-center mx-auto mb-4 shadow-xl">
                 <Key className="text-white" size={28} />

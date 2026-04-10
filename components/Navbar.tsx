@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Bell, LogOut, ChevronDown } from 'lucide-react';
+import { Bell, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
 import { ViewType } from '../types';
 import { GoogleUser } from '../services/googleAuth';
 import GoogleSignInButton from './GoogleSignInButton';
@@ -14,6 +14,8 @@ interface NavbarProps {
   googleUser?: GoogleUser | null;
   onGoogleSignOut?: () => void;
   onGoogleSignIn?: (user: GoogleUser) => void;
+  onLogoTap?: () => void;
+  logoTapCount?: number;
 }
 
 const viewTitles: Record<ViewType, { sub: string; title: string }> = {
@@ -32,21 +34,52 @@ const Navbar: React.FC<NavbarProps> = ({
   googleUser,
   onGoogleSignOut,
   onGoogleSignIn,
+  onLogoTap,
+  logoTapCount = 0,
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(false);
   const { sub, title } = viewTitles[currentView] ?? viewTitles.visitor;
+
+  // Visual feedback dots for secret tap progress
+  const tapDots = logoTapCount > 0 ? logoTapCount : 0;
 
   return (
     <nav className="relative z-50 pt-8 pb-4">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between py-3 sm:py-4 items-center">
 
-          {/* Brand + Logo */}
+          {/* Brand + Logo (secret tap target) */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-100 shrink-0">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <div className="relative">
+              <button
+                onClick={onLogoTap}
+                className="w-11 h-11 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-100 shrink-0 active:scale-90 transition-transform select-none"
+                aria-label="Logo"
+              >
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+              </button>
+
+              {/* Tap progress indicator dots — visible only while tapping */}
+              {tapDots > 0 && (
+                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1">
+                  {[1, 2, 3].map(i => (
+                    <div
+                      key={i}
+                      className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${i <= tapDots ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Admin badge shown discreetly when in admin mode */}
+              {isAdmin && currentView === 'admin' && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+                  <ShieldCheck size={8} className="text-white" strokeWidth={3} />
+                </div>
+              )}
             </div>
+
             <div className="flex flex-col min-w-0">
               <span className="text-slate-500 text-[11px] font-bold uppercase tracking-wider truncate">
                 {googleUser && currentView === 'visitor'
@@ -59,7 +92,8 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right side actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Admin logout button */}
+
+            {/* Admin logout — only shown when inside admin view */}
             {isAdmin && currentView === 'admin' && (
               <>
                 <button className="relative flex items-center justify-center p-2.5 rounded-full bg-white shadow-sm text-slate-700">
@@ -69,14 +103,14 @@ const Navbar: React.FC<NavbarProps> = ({
                 <button
                   onClick={onLogout}
                   className="flex items-center justify-center p-2.5 rounded-full bg-white text-rose-500 shadow-sm"
-                  title="Logout Admin"
+                  title="Keluar dari Admin"
                 >
                   <LogOut size={20} strokeWidth={2.5} />
                 </button>
               </>
             )}
 
-            {/* Google User Avatar / Sign-In button */}
+            {/* Google User Avatar / Sign-In — only on public views */}
             {currentView !== 'admin' && (
               <>
                 {googleUser ? (
@@ -97,7 +131,6 @@ const Navbar: React.FC<NavbarProps> = ({
                       <ChevronDown size={12} className="text-slate-400" />
                     </button>
 
-                    {/* Dropdown menu */}
                     {showUserMenu && (
                       <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-3 w-52 z-50">
                         <div className="flex items-center gap-3 p-2 border-b border-slate-50 mb-2">
@@ -132,7 +165,6 @@ const Navbar: React.FC<NavbarProps> = ({
                       Masuk
                     </button>
 
-                    {/* Google Sign-In popup */}
                     {showGoogleSignIn && onGoogleSignIn && (
                       <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 w-72">
                         <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3">Masuk dengan Google</p>
@@ -150,7 +182,7 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Overlay to close dropdown */}
+      {/* Overlay to close dropdowns */}
       {(showUserMenu || showGoogleSignIn) && (
         <div
           className="fixed inset-0 z-40"
