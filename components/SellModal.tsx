@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { PendingSubmission, AppSettings } from '../types';
+import { GoogleUser } from '../services/googleAuth';
 import { Star, Clock, CheckCircle2, CreditCard, X, Camera, ChevronRight, Check, User, Phone, Image as ImageIcon, DollarSign, Copy, AlertCircle, Landmark, Wallet, Smartphone } from 'lucide-react';
 
 interface SellModalProps {
   onClose: () => void;
   onSubmit: (submission: PendingSubmission) => void;
   settings: AppSettings;
+  googleUser: GoogleUser | null;
 }
 
-const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings }) => {
+const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, googleUser }) => {
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -114,6 +116,7 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings }) =>
       isPremium: formData.isPremium,
       paymentMethod: formData.isPremium ? formData.paymentMethod : undefined,
       paymentProof: formData.isPremium ? formData.paymentProof : undefined,
+      sellerEmail: googleUser?.email,
     };
     onSubmit(submission);
     setStep(5); // Show success (now step 5)

@@ -103,6 +103,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ submissions, onAp
                 <div className="bg-blue-50 rounded-3xl p-4 space-y-2">
                   <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Info Penjual</p>
                   <p className="text-sm font-black text-slate-900">{selected.sellerName}</p>
+                  {selected.sellerEmail && (
+                    <p className="text-[10px] text-slate-500 font-bold -mt-1 mb-1">{selected.sellerEmail}</p>
+                  )}
                   <a href={`https://wa.me/${selected.sellerPhone}`} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                     <Phone size={14} /> {selected.sellerPhone}

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Heart, Edit, Trash2, Star } from 'lucide-react';
+import { MapPin, Heart, Edit, Trash2, Star, User, Mail, Info } from 'lucide-react';
 import { Motorcycle } from '../types';
 
 interface MotorCardProps {
@@ -130,9 +130,25 @@ const MotorCard: React.FC<MotorCardProps> = ({
           )}
         </div>
         {isAdminView && (
+          <div className="mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">
+              <Info size={10} /> Akun Penjual
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-700 truncate">
+              <User size={10} className="text-slate-400" /> {motor.sellerPhone}
+            </div>
+            {motor.sellerEmail && (
+              <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 truncate">
+                <Mail size={10} className="text-slate-400" /> {motor.sellerEmail}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isAdminView && (
           <button
             onClick={e => { e.stopPropagation(); onUpdateStatus?.(motor.id, motor.status === 'Tersedia' ? 'Terjual' : 'Tersedia'); }}
-            className={`mt-3 py-2 rounded-xl text-xs font-bold transition-all w-full ${motor.status === 'Tersedia' ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-green-100 text-green-700'}`}
+            className={`mt-2 py-2 rounded-xl text-xs font-bold transition-all w-full ${motor.status === 'Tersedia' ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-green-100 text-green-700'}`}
           >
             {motor.status === 'Tersedia' ? 'Set Terjual' : 'Set Tersedia'}
           </button>

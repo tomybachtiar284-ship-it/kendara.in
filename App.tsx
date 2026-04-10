@@ -6,9 +6,10 @@ import AdminPanel from './components/AdminPanel';
 import FavoritesPanel from './components/FavoritesPanel';
 import SearchPanel from './components/SearchPanel';
 import SellModal from './components/SellModal';
+import ProfilePanel from './components/ProfilePanel';
 import NotificationPanel from './components/NotificationPanel';
-import { Motorcycle, PendingSubmission, ViewType, AppSettings } from './types';
-import { Key, X, Home, Heart, Search } from 'lucide-react';
+import { Motorcycle, PendingSubmission, ViewType, AppSettings, UserRecord } from './types';
+import { Key, X, Home, Heart, Search, UserCircle } from 'lucide-react';
 import { GoogleUser, initGoogleSignIn, googleSignOut } from './services/googleAuth';
 
 const INITIAL_MOTORS: Motorcycle[] = [
@@ -121,6 +122,10 @@ const App: React.FC = () => {
     }
   });
 
+  const [users, setUsers] = useState<UserRecord[]>(() => {
+    try { return JSON.parse(localStorage.getItem('kip_users_list') || '[]'); } catch { return []; }
+  });
+
   const [motors, setMotors] = useState<Motorcycle[]>(() => {
     const saved = localStorage.getItem('jmp_inventory');
     if (saved) {
@@ -153,21 +158,128 @@ const App: React.FC = () => {
   }, [settings]);
 
   useEffect(() => {
-    if (googleUser) {
-      localStorage.setItem('kip_google_user', JSON.stringify(googleUser));
-    } else {
-      localStorage.removeItem('kip_google_user');
-    }
+    localStorage.setItem('kip_users_list', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('kip_google_user', JSON.stringify(googleUser));
   }, [googleUser]);
+
+  // Sync historical users from existing listings
+  useEffect(() => {
+    if (motors.length === 0 && pendingSubmissions.filter(s => s.status === 'pending').length === 0) return;
+    
+    setUsers(prev => {
+      const newUsers = [...prev];
+      let changed = false;
+
+      // Scan active motors
+      motors.forEach(m => {
+        if (!m.sellerEmail) return;
+        if (!newUsers.some(u => u.email === m.sellerEmail)) {
+          newUsers.push({
+            sub: `sync_${Math.random().toString(36).substr(2, 9)}`,
+            email: m.sellerEmail,
+            name: m.sellerEmail.split('@')[0], 
+            picture: 'https://ui-avatars.com/api/?name=User&background=random',
+            firstLogin: m.createdAt,
+            lastLogin: m.createdAt,
+          });
+          changed = true;
+        }
+      });
+
+      // Scan pending submissions
+      pendingSubmissions.forEach(s => {
+        if (!s.sellerEmail) return;
+        if (!newUsers.some(u => u.email === s.sellerEmail)) {
+          newUsers.push({
+            sub: `sync_${Math.random().toString(36).substr(2, 9)}`,
+            email: s.sellerEmail,
+            name: s.sellerName || s.sellerEmail.split('@')[0],
+            picture: 'https://ui-avatars.com/api/?name=User&background=random',
+            firstLogin: s.submittedAt,
+            lastLogin: s.submittedAt,
+          });
+          changed = true;
+        }
+      });
+
+      return changed ? newUsers : prev;
+    });
+  }, [motors, pendingSubmissions]);
 
   // Init Google Sign-In auto-prompt on mount
   useEffect(() => {
     if (!googleUser) {
       initGoogleSignIn((user) => {
         setGoogleUser(user);
+        
+        // Track/Update user in global list
+        setUsers(prev => {
+          // Look for either the same sub OR the same email (if it was a synced placeholder)
+          const existingIndex = prev.findIndex(u => u.sub === user.sub || u.email === user.email);
+          
+          if (existingIndex !== -1) {
+            const updatedUsers = [...prev];
+            updatedUsers[existingIndex] = {
+              ...updatedUsers[existingIndex],
+              sub: user.sub, // Ensure real sub replaces 'sync_'
+              name: user.name,
+              picture: user.picture, // Real photo from Google
+              lastLogin: Date.now()
+            };
+            return updatedUsers;
+          }
+          
+          const newUser: UserRecord = {
+            sub: user.sub,
+            email: user.email,
+            name: user.name,
+            picture: user.picture,
+            firstLogin: Date.now(),
+            lastLogin: Date.now(),
+          };
+          return [newUser, ...prev];
+        });
       });
     }
   }, []);
+
+  // Sync current logged-in user to the users list
+  useEffect(() => {
+    if (googleUser) {
+      setUsers(prev => {
+        const existingIndex = prev.findIndex(u => u.sub === googleUser.sub || u.email === googleUser.email);
+        
+        if (existingIndex !== -1) {
+          // Check if we actually need to update to avoid infinite loops
+          const existing = prev[existingIndex];
+          if (existing.picture === googleUser.picture && existing.sub === googleUser.sub) return prev;
+          
+          const updatedUsers = [...prev];
+          updatedUsers[existingIndex] = {
+            ...existing,
+            sub: googleUser.sub,
+            name: googleUser.name,
+            picture: googleUser.picture,
+            lastLogin: Date.now()
+          };
+          return updatedUsers;
+        }
+        
+        const newUser: UserRecord = {
+          sub: googleUser.sub,
+          email: googleUser.email,
+          name: googleUser.name,
+          picture: googleUser.picture,
+          firstLogin: Date.now(),
+          lastLogin: Date.now(),
+        };
+        return [newUser, ...prev];
+      });
+    }
+  }, [googleUser]);
 
   const handleToggleFavorite = (id: string) => {
     setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
@@ -202,6 +314,12 @@ const App: React.FC = () => {
   const deleteMotor = (id: string) => { if (confirm('Hapus unit ini dari katalog?')) setMotors(motors.filter(m => m.id !== id)); };
   const updateStatus = (id: string, status: 'Tersedia' | 'Terjual') => setMotors(motors.map(m => m.id === id ? { ...m, status } : m));
 
+  const handleDeleteSubmission = (id: string) => {
+    if (confirm('Batalkan pengajuan iklan ini?')) {
+      setPendingSubmissions(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
   // Pending submissions handlers
   const handleNewSubmission = (submission: PendingSubmission) => {
     setPendingSubmissions(prev => [submission, ...prev]);
@@ -230,6 +348,7 @@ const App: React.FC = () => {
       status: 'Tersedia',
       location: sub.location,
       sellerPhone: sub.sellerPhone,
+      sellerEmail: sub.sellerEmail,
       category: sub.category,
       createdAt: Date.now(),
       isPremium: sub.isPremium,
@@ -268,6 +387,7 @@ const App: React.FC = () => {
     { view: 'visitor', icon: <Home size={20} />, label: 'Beranda' },
     { view: 'search', icon: <Search size={20} />, label: 'Jelajah' },
     { view: 'favorites', icon: <Heart size={20} />, label: 'Favorit' },
+    { view: 'profile', icon: <UserCircle size={20} />, label: 'Iklan Saya' },
   ];
 
   return (
@@ -315,9 +435,22 @@ const App: React.FC = () => {
             googleUser={googleUser}
           />
         )}
+        {view === 'profile' && (
+          <ProfilePanel
+            motors={motors}
+            pendingSubmissions={pendingSubmissions}
+            googleUser={googleUser}
+            onToggleFavorite={handleToggleFavorite}
+            favorites={favorites}
+            onDeleteMotor={deleteMotor}
+            onDeleteSubmission={handleDeleteSubmission}
+            onUpdateStatus={updateStatus}
+          />
+        )}
         {view === 'admin' && (
           <AdminPanel
             motors={motors}
+            pendingSubmissions={pendingSubmissions}
             onAddMotor={addMotor}
             onUpdateMotor={updateMotor}
             onDeleteMotor={deleteMotor}
@@ -326,6 +459,7 @@ const App: React.FC = () => {
             onOpenNotifications={() => setShowNotificationPanel(true)}
             settings={settings}
             onUpdateSettings={setSettings}
+            users={users}
           />
         )}
       </main>
@@ -405,6 +539,7 @@ const App: React.FC = () => {
           onClose={() => setShowSellModal(false)} 
           onSubmit={handleNewSubmission} 
           settings={settings}
+          googleUser={googleUser}
         />
       )}
 

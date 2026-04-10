@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Bell, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Bell, LogOut, ChevronDown, ShieldCheck, Package } from 'lucide-react';
 import { ViewType } from '../types';
 import { GoogleUser } from '../services/googleAuth';
 import GoogleSignInButton from './GoogleSignInButton';
@@ -24,6 +24,7 @@ const viewTitles: Record<ViewType, { sub: string; title: string }> = {
   visitor: { sub: 'Selamat Datang', title: 'kendara.in bekas palu' },
   search: { sub: 'Temukan Kendaraan', title: 'Jelajah & Filter' },
   favorites: { sub: 'Tersimpan', title: 'Favorit Saya' },
+  profile: { sub: 'Dashboard Penjual', title: 'Iklan Saya' },
   admin: { sub: 'Dashboard', title: 'Kelola Inventaris' },
 };
 
@@ -156,13 +157,22 @@ const Navbar: React.FC<NavbarProps> = ({
                             <p className="text-[10px] text-slate-400 truncate">{googleUser.email}</p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => { onGoogleSignOut?.(); setShowUserMenu(false); }}
-                          className="w-full flex items-center gap-2 text-rose-500 text-sm font-bold py-2 px-2 rounded-xl hover:bg-rose-50 transition-colors"
-                        >
-                          <LogOut size={16} />
-                          Keluar dari Google
-                        </button>
+                        <div className="space-y-1 mb-2">
+                          <button
+                            onClick={() => { onToggleView('profile'); setShowUserMenu(false); }}
+                            className={`w-full flex items-center gap-2 text-sm font-bold py-2.5 px-3 rounded-xl transition-colors ${currentView === 'profile' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            <Package size={16} />
+                            Iklan Saya
+                          </button>
+                          <button
+                            onClick={() => { onGoogleSignOut?.(); setShowUserMenu(false); }}
+                            className="w-full flex items-center gap-2 text-rose-500 text-sm font-bold py-2.5 px-3 rounded-xl hover:bg-rose-50 transition-colors"
+                          >
+                            <LogOut size={16} />
+                            Keluar dari Google
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

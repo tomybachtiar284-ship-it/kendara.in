@@ -12,6 +12,7 @@ export interface Motorcycle {
   status: 'Tersedia' | 'Terjual';
   location: string;
   sellerPhone: string;
+  sellerEmail?: string;
   category: string;
   createdAt: number;
   views?: number;
@@ -32,7 +33,7 @@ export interface AppSettings {
   gopayNumber: string;
 }
 
-export type ViewType = 'visitor' | 'admin' | 'favorites' | 'search';
+export type ViewType = 'visitor' | 'admin' | 'favorites' | 'search' | 'profile';
 
 export interface AdminCredentials {
   username: string;
@@ -46,6 +47,7 @@ export interface PendingSubmission {
   // Seller info
   sellerName: string;
   sellerPhone: string;
+  sellerEmail?: string;
   // Vehicle info
   brand: string;
   model: string;
@@ -62,4 +64,13 @@ export interface PendingSubmission {
   isPremium?: boolean;
   paymentMethod?: string;
   paymentProof?: string;
+}
+
+export interface UserRecord {
+  sub: string;
+  email: string;
+  name: string;
+  picture: string;
+  firstLogin: number;
+  lastLogin: number;
 }

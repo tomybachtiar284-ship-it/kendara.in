@@ -3,14 +3,15 @@ import React, { useState } from 'react';
 import { 
   PlusCircle, Sparkles, X, Save, Image as ImageIcon, Search, 
   TrendingUp, TrendingDown, DollarSign, Package, ClipboardCheck, 
-  Eye, Trophy, Target, LayoutDashboard, CreditCard, Wallet, Smartphone, Landmark, Settings as SettingsIcon
+  Eye, Trophy, Target, LayoutDashboard, CreditCard, Wallet, Smartphone, Landmark, Settings as SettingsIcon, Users, ChevronRight
 } from 'lucide-react';
-import { Motorcycle, AppSettings } from '../types';
+import { Motorcycle, AppSettings, UserRecord } from '../types';
 import { generateMotorDescription } from '../services/geminiService';
 import MotorCard from './MotorCard';
 
 interface AdminPanelProps {
   motors: Motorcycle[];
+  pendingSubmissions: PendingSubmission[];
   onAddMotor: (motor: Omit<Motorcycle, 'id' | 'createdAt'>) => void;
   onUpdateMotor: (motor: Motorcycle) => void;
   onDeleteMotor: (id: string) => void;
@@ -19,10 +20,12 @@ interface AdminPanelProps {
   onOpenNotifications?: () => void;
   settings: AppSettings;
   onUpdateSettings: (s: AppSettings) => void;
+  users: UserRecord[];
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ 
   motors, 
+  pendingSubmissions,
   onAddMotor, 
   onUpdateMotor, 
   onDeleteMotor,
@@ -30,9 +33,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   pendingCount = 0,
   onOpenNotifications,
   settings,
-  onUpdateSettings
+  onUpdateSettings,
+  users
 }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'settings'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'users'>('inventory');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMotor, setEditingMotor] = useState<Motorcycle | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -192,6 +196,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             <LayoutDashboard size={18} /> Inventaris
           </button>
           <button 
+            onClick={() => setActiveTab('users')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${activeTab === 'users' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <Users size={18} /> User
+          </button>
+          <button 
             onClick={() => setActiveTab('settings')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${activeTab === 'settings' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -339,6 +349,89 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
         </>
+      ) : activeTab === 'users' ? (
+        /* USERS MANAGEMENT SECTION */
+        <div className="px-1 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+          <div className="flex flex-col gap-1 mb-2">
+            <p className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] px-1">Database User</p>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Manajemen Pengguna</h2>
+          </div>
+
+          {users.length === 0 ? (
+            <div className="bg-white rounded-[40px] p-20 text-center border border-slate-100 shadow-sm">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="text-slate-200" size={32} />
+              </div>
+              <p className="text-slate-400 font-bold text-sm">Belum ada user yang terdaftar</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {[...users].sort((a, b) => {
+                const aPremium = motors.some(m => m.sellerEmail === a.email && m.isPremium) || pendingSubmissions.some(s => s.sellerEmail === a.email && s.isPremium);
+                const bPremium = motors.some(m => m.sellerEmail === b.email && m.isPremium) || pendingSubmissions.some(s => s.sellerEmail === b.email && s.isPremium);
+                return (bPremium ? 1 : 0) - (aPremium ? 1 : 0);
+              }).map((user) => {
+                const userMotors = motors.filter(m => m.sellerEmail === user.email);
+                const userPending = pendingSubmissions.filter(s => s.sellerEmail === user.email);
+                
+                const activePremium = userMotors.filter(m => m.isPremium).length;
+                const pendingPremium = userPending.filter(s => s.isPremium).length;
+                const totalPremium = activePremium + pendingPremium;
+                
+                const totalListing = userMotors.length + userPending.length;
+                const totalRevenue = totalPremium * settings.premiumPrice;
+
+                return (
+                  <div key={user.sub} className={`bg-white rounded-[32px] p-5 border shadow-sm hover:shadow-md transition-all ${totalPremium > 0 ? 'border-amber-100 ring-2 ring-amber-50' : 'border-slate-100'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img 
+                          src={user.picture} 
+                          alt={user.name} 
+                          className="w-14 h-14 rounded-2xl object-cover ring-4 ring-slate-50"
+                          referrerPolicy="no-referrer"
+                        />
+                        {totalPremium > 0 && (
+                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center text-white border-2 border-white">
+                            <Sparkles size={12} fill="currentColor" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-black text-slate-900 text-sm truncate pr-2">{user.name}</h4>
+                          <div className="flex flex-col items-end">
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                              {totalListing} Unit
+                            </span>
+                            {totalPremium > 0 && (
+                              <span className="text-[9px] font-black text-amber-600 mt-1 uppercase tracking-tighter">
+                                {totalPremium} PREMIUM
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-bold truncate mb-2">{user.email}</p>
+                        
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400">
+                             Bergabung: {new Date(user.firstLogin).toLocaleDateString('id-ID')}
+                          </div>
+                          {totalRevenue > 0 && (
+                            <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                               <DollarSign size={10} /> {formatCurrency(totalRevenue)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-slate-300 ml-2" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       ) : (
         /* SETTINGS SECTION */
         <div className="px-1 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
