@@ -5,7 +5,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, Package, ClipboardCheck, 
   Eye, Trophy, Target, LayoutDashboard, CreditCard, Wallet, Smartphone, Landmark, Settings as SettingsIcon, Users, ChevronRight
 } from 'lucide-react';
-import { Motorcycle, AppSettings, UserRecord } from '../types';
+import { Motorcycle, AppSettings, UserRecord, PendingSubmission } from '../types';
 import { generateMotorDescription } from '../services/geminiService';
 import MotorCard from './MotorCard';
 
@@ -165,21 +165,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   );
 
   // ANALYTICS CALCULATIONS
-  const totalUnits = motors.length;
-  const soldUnits = motors.filter(m => m.status === 'Terjual').length;
+  const totalUnits = (motors || []).length;
+  const soldUnits = (motors || []).filter(m => m && m.status === 'Terjual').length;
   const availableUnits = totalUnits - soldUnits;
   const soldRatio = totalUnits > 0 ? (soldUnits / totalUnits) * 100 : 0;
   
-  const totalValue = motors
-    .filter(m => m.status === 'Tersedia')
-    .reduce((sum, m) => sum + m.price, 0);
+  const totalValue = (motors || [])
+    .filter(m => m && m.status === 'Tersedia')
+    .reduce((sum, m) => sum + (Number(m.price) || 0), 0);
 
-  const totalViews = motors.reduce((sum, m) => sum + (m.views || 0), 0);
+  const totalViews = (motors || []).reduce((sum, m) => sum + (Number(m.views) || 0), 0);
   
   // Find most popular (by views)
-  const topMotor = [...motors]
-    .filter(m => (m.views || 0) > 0)
-    .sort((a, b) => (b.views || 0) - (a.views || 0))[0];
+  const topMotor = [...(motors || [])]
+    .filter(m => m && (Number(m.views) || 0) > 0)
+    .sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0))[0];
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
@@ -516,7 +516,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nama Bank</label>
                   <input type="text" value={settings.bankName} 
                     onChange={e => onUpdateSettings({...settings, bankName: e.target.value})}
-                    placeholder="Contoh: BCA"
+                    placeholder="Contoh: BNI"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
                 </div>
                 <div className="space-y-1.5">

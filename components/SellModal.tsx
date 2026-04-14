@@ -26,7 +26,7 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, goog
     condition: 'Mulus' as 'Mulus' | 'Standar' | 'Modifikasi',
     location: 'Palu',
     isPremium: false,
-    paymentMethod: 'BCA',
+    paymentMethod: 'BNI',
     paymentProof: '',
   });
 
@@ -36,23 +36,25 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, goog
     if (step === 4 && timeLeft > 0) {
       const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
       return () => clearInterval(timer);
-    } else if (step === 4 && timeLeft === 0) {
-      alert('Waktu pembayaran habis. Silakan ulangi proses.');
-      setStep(3);
-      setTimeLeft(600);
     }
   }, [step, timeLeft]);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert('Nomor berhasil disalin!');
+    navigator.clipboard.writeText(text).catch(() => {});
+    alert('Disalin: ' + text);
   };
+
+  useEffect(() => {
+    if (googleUser && !formData.sellerName) {
+      setFormData(prev => ({ ...prev, sellerName: googleUser.name }));
+    }
+  }, [googleUser]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
@@ -63,10 +65,10 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, goog
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let w = img.width, h = img.height;
-          if (w > 1200) { h = Math.round(h * 1200 / w); w = 1200; }
+          if (w > 600) { h = Math.round(h * 600 / w); w = 600; }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
           setImages(prev => prev.length < 5 ? [...prev, dataUrl] : prev);
         };
         img.src = event.target?.result as string;
@@ -85,10 +87,10 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, goog
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let w = img.width, h = img.height;
-          if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+          if (w > 500) { h = Math.round(h * 500 / w); w = 500; }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-          setFormData(prev => ({ ...prev, paymentProof: canvas.toDataURL('image/jpeg', 0.8) }));
+          setFormData(prev => ({ ...prev, paymentProof: canvas.toDataURL('image/jpeg', 0.4) }));
         };
         img.src = event.target?.result as string;
       };
@@ -370,24 +372,38 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, goog
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Pilih Metode Pembayaran</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { id: 'BCA', label: 'Bank BCA', icon: <Landmark size={20} />, color: 'bg-blue-500' },
-                    { id: 'DANA', label: 'DANA', icon: <Wallet size={20} />, color: 'bg-blue-400' },
-                    { id: 'OVO', label: 'OVO', icon: <Smartphone size={20} />, color: 'bg-indigo-500' },
-                    { id: 'Gopay', label: 'Gopay', icon: <CreditCard size={20} />, color: 'bg-emerald-500' },
+                    { id: 'BNI', label: 'Bank BNI', logo: '/logos/bni.png' },
+                    { id: 'DANA', label: 'DANA', logo: '/logos/dana.png' },
+                    { id: 'OVO', label: 'OVO', logo: '/logos/ovo.png' },
+                    { id: 'Gopay', label: 'Gopay', logo: '/logos/gopay.jpg' },
                   ].map(method => (
                     <button
                       key={method.id}
                       onClick={() => setFormData({ ...formData, paymentMethod: method.id })}
-                      className={`p-4 rounded-[28px] border-2 transition-all flex flex-col items-center gap-3 active:scale-95 ${
+                      className={`p-4 rounded-[28px] border-2 transition-all flex flex-col items-center justify-center gap-3 active:scale-95 h-32 ${
                         formData.paymentMethod === method.id 
-                        ? 'border-slate-900 bg-slate-900 text-white shadow-lg' 
-                        : 'border-slate-100 bg-slate-50 text-slate-600 grayscale opacity-60'
+                        ? 'border-slate-900 bg-slate-900 shadow-lg' 
+                        : 'border-slate-100 bg-white opacity-60'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${formData.paymentMethod === method.id ? 'bg-white/20' : 'bg-slate-200'}`}>
-                        {method.icon}
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden p-2 ${formData.paymentMethod === method.id ? 'bg-white' : 'bg-slate-50'}`}>
+                        <img 
+                          src={method.logo} 
+                          alt={method.label} 
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-icon');
+                            if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                          }}
+                        />
+                        <div className="fallback-icon hidden w-full h-full items-center justify-center">
+                          <Wallet size={24} className={formData.paymentMethod === method.id ? 'text-slate-900' : 'text-slate-300'} />
+                        </div>
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-wider">{method.label}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-wider ${formData.paymentMethod === method.id ? 'text-white' : 'text-slate-400'}`}>
+                        {method.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -400,18 +416,18 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onSubmit, settings, goog
                     <div className="space-y-1">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detail Tujuan</p>
                       <p className="font-black text-slate-900 text-lg">
-                        {formData.paymentMethod === 'BCA' && settings.bankAccount}
+                        {formData.paymentMethod === 'BNI' && settings.bankAccount}
                         {formData.paymentMethod === 'DANA' && settings.danaNumber}
                         {formData.paymentMethod === 'OVO' && settings.ovoNumber}
                         {formData.paymentMethod === 'Gopay' && settings.gopayNumber}
                       </p>
                       <p className="text-xs font-bold text-slate-500">
-                        {formData.paymentMethod === 'BCA' ? `a/n ${settings.bankHolder}` : 'a/n Admin Kendara.in'}
+                        {formData.paymentMethod === 'BNI' ? `a/n ${settings.bankHolder}` : 'a/n Admin Kendara.in'}
                       </p>
                     </div>
                     <button 
                       onClick={() => {
-                        const num = formData.paymentMethod === 'BCA' ? settings.bankAccount : 
+                        const num = formData.paymentMethod === 'BNI' ? settings.bankAccount : 
                                   formData.paymentMethod === 'DANA' ? settings.danaNumber :
                                   formData.paymentMethod === 'OVO' ? settings.ovoNumber : settings.gopayNumber;
                         copyToClipboard(num);

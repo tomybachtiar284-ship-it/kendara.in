@@ -100,7 +100,7 @@ const App: React.FC = () => {
         premiumPrice: 15000,
         freeDurationDays: 14,
         premiumDurationDays: 30,
-        bankName: 'BCA',
+        bankName: 'BNI',
         bankAccount: '1234567890',
         bankHolder: 'Admin Kendara.in',
         danaNumber: '08123456789',
@@ -112,7 +112,7 @@ const App: React.FC = () => {
         premiumPrice: 15000, 
         freeDurationDays: 14, 
         premiumDurationDays: 30,
-        bankName: 'BCA',
+        bankName: 'BNI',
         bankAccount: '1234567890',
         bankHolder: 'Admin Kendara.in',
         danaNumber: '08123456789',
@@ -142,27 +142,27 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem('jmp_inventory', JSON.stringify(motors));
+    try { localStorage.setItem('jmp_inventory', JSON.stringify(motors)); } catch (e) { console.error('Storage full:', e); }
   }, [motors]);
 
   useEffect(() => {
-    localStorage.setItem('kip_favorites', JSON.stringify(favorites));
+    try { localStorage.setItem('kip_favorites', JSON.stringify(favorites)); } catch (e) { console.error('Storage full:', e); }
   }, [favorites]);
 
   useEffect(() => {
-    localStorage.setItem('kip_pending_submissions', JSON.stringify(pendingSubmissions));
+    try { localStorage.setItem('kip_pending_submissions', JSON.stringify(pendingSubmissions)); } catch (e) { console.error('Storage full:', e); alert('Penyimpanan browser penuh. Mohon hapus beberapa iklan yang sudah tayang jika fitur ini mulai error.'); }
   }, [pendingSubmissions]);
 
   useEffect(() => {
-    localStorage.setItem('kip_settings', JSON.stringify(settings));
+    try { localStorage.setItem('kip_settings', JSON.stringify(settings)); } catch (e) { console.error('Storage full:', e); }
   }, [settings]);
 
   useEffect(() => {
-    localStorage.setItem('kip_users_list', JSON.stringify(users));
+    try { localStorage.setItem('kip_users_list', JSON.stringify(users)); } catch (e) { console.error('Storage full:', e); }
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('kip_google_user', JSON.stringify(googleUser));
+    try { localStorage.setItem('kip_google_user', JSON.stringify(googleUser)); } catch (e) { console.error('Storage full:', e); }
   }, [googleUser]);
 
   // Sync historical users from existing listings
@@ -207,7 +207,7 @@ const App: React.FC = () => {
 
       return changed ? newUsers : prev;
     });
-  }, [motors, pendingSubmissions]);
+  }, [motors.length, pendingSubmissions.length]); // Only sync when counts change to prevent infinite loops
 
   // Init Google Sign-In auto-prompt on mount
   useEffect(() => {
@@ -323,39 +323,46 @@ const App: React.FC = () => {
   // Pending submissions handlers
   const handleNewSubmission = (submission: PendingSubmission) => {
     setPendingSubmissions(prev => [submission, ...prev]);
-    setShowSellModal(false);
+    // Do not close modal here, let SellModal show Step 5 (Success)
   };
 
   const handleApprove = (id: string) => {
     const sub = pendingSubmissions.find(s => s.id === id);
-    if (!sub) return;
+    if (!sub || sub.status !== 'pending') return;
 
-    // Calculate dynamic expiry date based on settings
-    const durationDays = sub.isPremium ? settings.premiumDurationDays : settings.freeDurationDays;
+    const durationDays = sub.isPremium ? (settings.premiumDurationDays || 30) : (settings.freeDurationDays || 14);
     const expiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
 
-    // Add to motors catalog
     const newMotor: Motorcycle = {
-      id: Math.random().toString(36).substr(2, 9),
-      brand: sub.brand,
-      model: sub.model,
-      year: sub.year,
-      price: sub.price,
-      mileage: sub.mileage,
-      condition: sub.condition,
-      images: sub.images,
-      description: sub.description,
+      id: `m_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`,
+      brand: sub.brand || 'Tanpa Merek',
+      model: sub.model || 'Tanpa Model',
+      year: Number(sub.year) || new Date().getFullYear(),
+      price: Number(sub.price) || 0,
+      mileage: sub.mileage || '0',
+      condition: sub.condition || 'Standar',
+      images: sub.images && sub.images.length > 0 ? sub.images : ['https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?q=80&w=400'],
+      description: sub.description || '-',
       status: 'Tersedia',
-      location: sub.location,
-      sellerPhone: sub.sellerPhone,
-      sellerEmail: sub.sellerEmail,
-      category: sub.category,
+      location: sub.location || 'Palu',
+      sellerPhone: sub.sellerPhone || '6281234567890',
+      sellerEmail: sub.sellerEmail || '',
+      category: sub.category || 'Motor',
       createdAt: Date.now(),
-      isPremium: sub.isPremium,
-      expiryDate: expiryDate, // Automatically set based on duration settings
+      isPremium: !!sub.isPremium,
+      expiryDate: expiryDate,
+      views: 0,
+      clicks: 0
     };
+
+    // Use a single functional update for consistency
     setMotors(prev => [newMotor, ...prev]);
     setPendingSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
+    
+    // Auto close panel if no more pending
+    if (pendingSubmissions.filter(s => s.status === 'pending').length <= 1) {
+      setShowNotificationPanel(false);
+    }
   };
 
   const handleReject = (id: string) => {
